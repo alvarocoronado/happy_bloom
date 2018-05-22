@@ -1,56 +1,33 @@
-# Simple device control using MQTT
+PASOS PARA DEJAR FUNCIONANDO EN MQTT AWS UN SENSOR DE TEMPERATURA
 
-This example demonstrates how to perform remote device control over MQTT
-protocol. Build & flash a firmware and configure WiFi
-(see [quick start guide](https://mongoose-os.com/docs/#/quickstart/)),
-and configure MQTT server:
+1) Instalar AWS CLI // MOS TOOL (Cesanta Mongoose) // Github
+2) descomprimir el rar en GitHub/sensor_mqtt
+3) Configurar el YML con el tópico de publicación y el mqtt:server:
 
-```
-mos build --arch esp8266
-mos flash
-mos config-set wifi............
-mos console
-```
+  - ["mqtt.pub", "s", "/sbs/devicedata/chao", {title: "Publish topic"}]
+  - ["mqtt.sub", "s", "/request", {title: "Subscribe topic"}]
+  - ["mqtt.server", "apazm8p6pm7gy.iot.us-west-2.amazonaws.com:8883"]
 
-Then use an MQTT client to send messages, for example web-based client at
-http://www.hivemq.com/demos/websocket-client/. Click on "Connect", then
-"Add new topic subscription", choose topic `/response`, then publish
-a message. In the "Topic" field, specify `/request`, and in the "Message"
-field, one of the following:
+	El server es: <accountnumber>.iot.<your-certificate's region>.amazonaws.com:8883
+  
+4) mos build --arch esp8266
+5) mos flash
+6) mos wifi RN40gtd rosarionorte40
+7) mos aws-iot-setup --aws-region us-west-2 --aws-iot-policy ElPrimeroPolicy
+8) En IoT core ir a test, suscribirse al topico y comprobar que llegan los mensajes.
 
-- `{"gpio": {"pin": 2, "state": 0}}` - sets GPIO pin X into state Y
-- `{"button": {"pin": 0}}` -
-  start listening on button presses on GPIO pin X. When button is pressed,
-  a message "click" is sent to the `/response` topic
-- `{"i2c_write": {"data": "af404c"}}` - write byte stream to the I2C bus.
-  In this example, there are 3 bytes `0xaf 0x40 0x4c`.
-  First byte is an I2C address. Status code 0 in response means success,
-  all other codes mean failure.
+-----------------------------------------------------------------------
 
-![Screenshot](shot.png?raw=true)
+CREAR UNA REGLA QUE SE GATILLA CON CADA MENSAJE
 
-By default, this firmware connects to the `broker.mqttdashboard.com:1883`
-MQTT server.
-You can change this default setting by editing `src/conf_schema.yaml` file
-and rebuilding/reflashing the firmware. Alternatively, you can change
-any setting on the fly, for example to choose a different MQTT server:
+1) Se crea desde IoT core.
+2) Dentro del IoT core en Act se crean las reglas.
+3) Se da un nombre a la regla, y en Attribute: *. En topic filter la gerarquía del topico MQTT donde publicas.
+4) Set one or more actions.
+5) Por ejemplo para gatillar el envio de mails, se agrega la regla SNS.
+6) Para setear el mail a quien se envian los mensajes debes ingresar a AWS -> SNS -> Topics y creas un topico.
+7) Al seleccionar el topico se configuran las acciones. Hay que darle a "Create a suscription" y en el protocolo "email". Como "endpoint" el mail del usuario. Luego debes confirmar via mail.
 
-```
-mos config-set mqtt.server=my_server:my_port
-```
+-------------------------------------------------------------------------
 
-## How to use Amazon IoT with this example
-First, download the Amazon's `aws` utility and run `aws configure`.
-Then you're ready to onboard
 
-```
-... build, flash, configure wifi
-mos aws-iot-setup --aws-iot-policy YOUR_POLICY
-mos console
-```
-
-Login to AWS IoT console, use web-based MQTT client to send messages.
-See https://mongoose-os.com/blog/esp8266-remote-control-via-aws-iot/
-for the step-by-step instructions.
-
-[![](https://img.youtube.com/vi/1iwwBXFBAcU/0.jpg)](https://www.youtube.com/watch?v=1iwwBXFBAcU)
